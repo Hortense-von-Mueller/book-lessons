@@ -107,40 +107,29 @@
       font-size: 13px;
     }
 
-    .designs {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .design-card {
+    .launch-link {
       display: flex;
-      min-height: 236px;
-      flex-direction: column;
-      padding: 22px;
-      border: 1px solid var(--line);
-      border-radius: 5px;
-      background: rgba(255,255,255,.48);
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 17px;
+      padding: 22px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
       text-decoration: none;
-      transition: border-color .2s, transform .2s, background .2s;
+      transition: border-color .2s, color .2s;
     }
 
-    .design-card:hover {
-      transform: translateY(-3px);
-      border-color: #9baa9c;
-      background: white;
-    }
+    .launch-link:hover { border-color: #9baa9c; color: var(--green); }
 
-    .design-card:focus-visible {
+    .launch-link:focus-visible {
       outline: 3px solid #76927d;
-      outline-offset: 3px;
+      outline-offset: 4px;
     }
 
-    .tag {
-      align-self: flex-start;
-      padding: 4px 8px;
-      border-radius: 20px;
-      background: #e8ede7;
+    .launch-kicker {
+      display: block;
+      margin-bottom: 7px;
       color: var(--green);
       font-size: 10px;
       font-weight: 700;
@@ -148,26 +137,22 @@
       text-transform: uppercase;
     }
 
-    .design-card h3 {
-      margin: 22px 0 7px;
-      font: 400 24px/1.2 var(--serif);
+    .launch-title {
+      display: block;
+      font: 400 25px/1.2 var(--serif);
     }
 
-    .design-card p {
-      max-width: 270px;
-      margin: 0;
+    .launch-copy {
+      display: block;
+      max-width: 520px;
+      margin-top: 6px;
       color: var(--muted);
       font-size: 13px;
     }
 
-    .open-label {
-      display: flex;
-      justify-content: space-between;
-      margin-top: auto;
-      padding-top: 21px;
+    .launch-arrow {
       color: var(--green);
-      font-size: 12px;
-      font-weight: 650;
+      font: 32px/1 var(--serif);
     }
 
     .roadmap {
@@ -214,9 +199,8 @@
     }
 
     @media (max-width: 760px) {
-      .designs { grid-template-columns: 1fr; }
-      .design-card { min-height: 190px; }
       .section-heading { align-items: flex-start; flex-direction: column; }
+      .launch-link { align-items: flex-start; }
       .roadmap { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 28px; }
     }
 
@@ -237,33 +221,21 @@
     <main>
       <p class="eyebrow">Read something. Do something.</p>
       <h1>Good ideas deserve a place in your week.</h1>
-      <p class="intro">Explore three directions for turning a book into seven practical lessons, then building a one-a-day plan to put them to work.</p>
+      <p class="intro">Use seven simulated practice prompts to build a one-a-day plan around a book you want to learn from.</p>
 
-      <section aria-labelledby="designs-heading">
+      <section aria-labelledby="workspace-heading">
         <div class="section-heading">
-          <h2 id="designs-heading">Choose a direction</h2>
-          <p>Each prototype has the same flow, with its own visual point of view.</p>
+          <h2 id="workspace-heading">Your reading workspace</h2>
+          <p>Books and plans stay in this browser.</p>
         </div>
-        <div class="designs">
-          <a class="design-card" href="designs/minimal/index.html">
-            <span class="tag">01 · Focus</span>
-            <h3>Quietly minimal</h3>
-            <p>A calm, editorial space that keeps the book and its lessons in focus.</p>
-            <span class="open-label">Explore the design <span aria-hidden="true">↗</span></span>
-          </a>
-          <a class="design-card" href="designs/data-dense/index.html">
-            <span class="tag">02 · Overview</span>
-            <h3>Insight dashboard</h3>
-            <p>A structured library view for keeping track of books, progress, and plans.</p>
-            <span class="open-label">Explore the design <span aria-hidden="true">↗</span></span>
-          </a>
-          <a class="design-card" href="designs/mobile-first/index.html">
-            <span class="tag">03 · Anywhere</span>
-            <h3>Made for mobile</h3>
-            <p>A touch-friendly daily companion built around small, repeatable actions.</p>
-            <span class="open-label">Explore the design <span aria-hidden="true">↗</span></span>
-          </a>
-        </div>
+        <a class="launch-link" href="designs/data-dense/index.html">
+          <span>
+            <span class="launch-kicker">Fieldnotes · Weekly practice</span>
+            <span class="launch-title">Open your reading library</span>
+            <span class="launch-copy">Create a seven-lesson plan, set its dates, and track what you put into practice.</span>
+          </span>
+          <span class="launch-arrow" aria-hidden="true">↗</span>
+        </a>
       </section>
 
       <section aria-labelledby="roadmap-heading">

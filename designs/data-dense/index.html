@@ -166,9 +166,54 @@
 
     .plan { min-width: 0; padding: 18px 0 20px 22px; }
     .plan-topline { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+    .book-overview { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 18px; min-width: 0; flex: 1; }
     .plan-title-wrap { min-width: 0; }
     .plan-title { margin: 0; overflow-wrap: anywhere; font: 400 24px/1.15 var(--serif); }
     .plan-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+
+    .book-cover {
+      --cover-bg: #244e45;
+      --cover-ink: #f7edda;
+      --cover-accent: #d98b59;
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      width: 100%;
+      aspect-ratio: .72;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      padding: 13px;
+      border: 1px solid rgba(29,40,34,.22);
+      background: var(--cover-bg);
+      box-shadow: 3px 4px 0 rgba(29,40,34,.12);
+      color: var(--cover-ink);
+    }
+    .book-cover[data-palette="1"] { --cover-bg: #a64e37; --cover-ink: #fff1d4; --cover-accent: #f0c66f; }
+    .book-cover[data-palette="2"] { --cover-bg: #31516a; --cover-ink: #f4eddd; --cover-accent: #e5a56e; }
+    .book-cover[data-palette="3"] { --cover-bg: #d7bc82; --cover-ink: #273b32; --cover-accent: #a34736; }
+    .book-cover::before, .book-cover::after { position: absolute; z-index: 0; content: ""; pointer-events: none; }
+    .book-cover::before {
+      top: 39%;
+      left: -18%;
+      width: 136%;
+      height: 42%;
+      border: 1px solid var(--cover-accent);
+      transform: rotate(-34deg);
+    }
+    .book-cover::after {
+      right: -17px;
+      bottom: 20px;
+      width: 78px;
+      height: 78px;
+      border: 1px solid var(--cover-accent);
+      background: repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--cover-accent) 40%, transparent) 8px 9px);
+      transform: rotate(45deg);
+    }
+    .cover-series, .cover-title, .cover-footer { position: relative; z-index: 1; }
+    .cover-series { font-size: 8px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .cover-title { align-self: center; max-height: 5.2em; overflow: hidden; font: 400 19px/1.1 var(--serif); overflow-wrap: anywhere; }
+    .cover-mark { position: absolute; z-index: 1; right: 8px; bottom: 25px; color: var(--cover-accent); font: 400 54px/.9 var(--serif); opacity: .8; }
+    .cover-footer { align-self: end; font-size: 8px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 
     .metrics {
       display: grid;
@@ -239,6 +284,11 @@
       .disclosure { text-align: left; }
       .book-list { grid-template-columns: 1fr; }
       .plan-topline { align-items: start; }
+      .book-overview { grid-template-columns: 100px minmax(0, 1fr); gap: 12px; }
+      .book-cover { padding: 9px; }
+      .cover-series, .cover-footer { font-size: 7px; }
+      .cover-title { font-size: 14px; }
+      .cover-mark { font-size: 42px; }
       .plan-title { font-size: 22px; }
       .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .metric { padding-right: 7px; }
@@ -276,7 +326,7 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true">f</span> Fieldnotes</div>
       <div class="topbar-meta">
         <span class="local-note">Local library · saved in this browser</span>
-        <a class="return-link" href="../../index.html">← All designs</a>
+        <a class="return-link" href="../../index.html">← Home</a>
       </div>
     </header>
 
@@ -314,10 +364,13 @@
         <section class="plan" aria-labelledby="plan-title">
           <div id="selected-plan" hidden>
             <div class="plan-topline">
-              <div class="plan-title-wrap">
-                <p class="section-kicker">Selected plan</p>
-                <h2 class="plan-title" id="plan-title"></h2>
-                <p class="plan-subtitle" id="plan-subtitle"></p>
+              <div class="book-overview">
+                <div class="book-cover" id="book-cover" role="img"></div>
+                <div class="plan-title-wrap">
+                  <p class="section-kicker">Selected plan</p>
+                  <h2 class="plan-title" id="plan-title"></h2>
+                  <p class="plan-subtitle" id="plan-subtitle"></p>
+                </div>
               </div>
               <button class="delete-button" id="delete-book" type="button">Delete book</button>
             </div>
@@ -391,6 +444,20 @@
       return element;
     }
 
+    function renderBookCover(book) {
+      const cover = document.querySelector("#book-cover");
+      const initials = book.title.trim().split(/\s+/).slice(0, 2).map((word) => Array.from(word)[0]?.toLocaleUpperCase() ?? "").join("");
+      const palette = Array.from(book.title).reduce((sum, character) => sum + character.codePointAt(0), 0) % 4;
+      cover.dataset.palette = String(palette);
+      cover.setAttribute("aria-label", `Generated title cover for ${book.title}`);
+      cover.replaceChildren(
+        makeElement("span", "cover-series", "Fieldnotes / Practice"),
+        makeElement("span", "cover-title", book.title),
+        makeElement("span", "cover-mark", initials),
+        makeElement("span", "cover-footer", "Seven day plan"),
+      );
+    }
+
     function render() {
       const database = readDatabase();
       const books = database.books;
@@ -421,6 +488,7 @@
       emptyState.hidden = Boolean(activeBook);
       if (!activeBook) return;
 
+      renderBookCover(activeBook);
       document.querySelector("#plan-title").textContent = activeBook.title;
       document.querySelector("#ledger-caption").textContent = `Seven simulated lessons for ${activeBook.title}`;
       const dates = activeBook.lessons.map((lesson) => lesson.date).filter(Boolean).sort();
