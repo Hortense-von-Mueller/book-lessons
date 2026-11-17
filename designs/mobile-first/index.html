@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f1e8">
+  <meta name="description" content="A local-first planner for putting one small idea into practice each day.">
+  <title>Fieldnotes — mobile planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f2f1e8;
+      --paper-deep: #e9e9dc;
+      --ink: #1e2b23;
+      --muted: #647168;
+      --line: #cbd2c7;
+      --green: #2f6248;
+      --green-dark: #234b36;
+      --green-pale: #dce8dc;
+      --coral: #c7523d;
+      --coral-pale: #f6e1d8;
+      --gold: #d69a23;
+      --gold-pale: #f5e9c9;
+      --white: #fffef9;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(0deg, transparent 0, transparent 31px, rgba(47,98,72,.035) 32px);
+      color: var(--ink);
+      font: 15px/1.45 var(--sans);
+    }
+
+    button, input, select { font: inherit; }
+    button, a, input, select { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    .topbar {
+      position: sticky;
+      z-index: 5;
+      top: 0;
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px max(16px, calc((100vw - 1060px) / 2));
+      border-bottom: 1px solid rgba(47,98,72,.22);
+      background: rgba(242,241,232,.96);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      gap: 9px;
+      color: var(--green-dark);
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green);
+      color: var(--white);
+      font: 19px/1 var(--serif);
+    }
+
+    .topbar-note {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: right;
+    }
+
+    .page {
+      width: min(100% - 32px, 1060px);
+      margin: 0 auto;
+      padding: 22px 0 56px;
+    }
+
+    .intro-row {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font: 400 30px/1.07 var(--serif);
+    }
+
+    .today-label {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border: 1px solid #d5bd79;
+      border-radius: 2px;
+      background: var(--gold-pale);
+      color: #604713;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .library-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .field { display: grid; gap: 5px; }
+    .field label, .field-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .book-select, input[type="text"], input[type="date"] {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      padding: 9px 11px;
+      border: 1px solid #aeb9ad;
+      border-radius: 3px;
+      background: var(--white);
+      color: var(--ink);
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 13px;
+      border: 1px solid var(--green);
+      border-radius: 3px;
+      background: var(--green);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .button:hover { background: var(--green-dark); }
+    .button.secondary { background: transparent; color: var(--green-dark); }
+    .button.secondary:hover { background: var(--green-pale); }
+    .button.danger { border-color: var(--coral); background: transparent; color: #8e3427; }
+    .button.danger:hover { background: var(--coral-pale); }
+    .button.icon-button { width: 44px; padding: 0; font-size: 19px; }
+
+    .add-form {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) minmax(140px, .7fr) auto;
+      gap: 9px;
+      align-items: end;
+      padding: 13px 0 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .add-form[hidden] { display: none; }
+
+    .notice {
+      min-height: 24px;
+      margin: 10px 0 0;
+      color: var(--green-dark);
+      font-size: 12px;
+    }
+
+    .notice.error { color: #a13427; font-weight: 700; }
+
+    .empty-state {
+      padding: 45px 10px;
+      text-align: center;
+    }
+
+    .empty-state h2 { margin: 0 0 8px; font: 400 26px/1.15 var(--serif); }
+    .empty-state p { max-width: 380px; margin: 0 auto 16px; color: var(--muted); font-size: 13px; }
+
+    .book-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 0 12px;
+    }
+
+    .book-heading h2 {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      margin: 0;
+      font: 400 23px/1.15 var(--serif);
+    }
+
+    .simulated-label {
+      display: inline-flex;
+      max-width: 180px;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-left: 3px solid var(--coral);
+      background: var(--coral-pale);
+      color: #7e3327;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .simulated-label::before { content: "✳"; color: var(--coral); font-size: 14px; }
+
+    .next-lesson {
+      position: relative;
+      overflow: hidden;
+      padding: 17px 17px 16px;
+      border-left: 5px solid var(--green);
+      background: var(--green-pale);
+    }
+
+    .next-lesson::after {
+      position: absolute;
+      right: 12px;
+      bottom: -34px;
+      color: rgba(47,98,72,.09);
+      content: "07";
+      font: 110px/.8 var(--serif);
+      pointer-events: none;
+    }
+
+    .next-kicker {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 4px;
+      color: var(--green-dark);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .next-lesson h3 {
+      position: relative;
+      z-index: 1;
+      max-width: 650px;
+      margin: 0;
+      font: 400 24px/1.12 var(--serif);
+    }
+
+    .next-date { position: relative; z-index: 1; margin: 5px 0 0; color: var(--green-dark); font-size: 12px; font-weight: 700; }
+    .next-action { position: relative; z-index: 1; max-width: 700px; margin: 13px 0 0; font-size: 13px; }
+    .next-reflection { position: relative; z-index: 1; max-width: 700px; margin: 8px 0 0; color: #42584a; font-size: 12px; }
+
+    .finished-note {
+      position: relative;
+      z-index: 1;
+      margin: 10px 0 0;
+      color: var(--green-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .progress-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 13px 0 18px;
+    }
+
+    .progress-track { height: 4px; flex: 1; overflow: hidden; background: #d5d9cd; }
+    .progress-fill { height: 100%; background: var(--green); transition: width .25s ease; }
+    .progress-copy { color: var(--muted); font-size: 10px; white-space: nowrap; }
+
+    .agenda-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 8px;
+    }
+
+    .agenda-heading h3, .lessons-heading h3 { margin: 0; font: 400 19px/1.2 var(--serif); }
+    .agenda-heading p { margin: 0; color: var(--muted); font-size: 10px; }
+
+    .day-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+      margin-bottom: 19px;
+    }
+
+    .day-button {
+      display: grid;
+      min-width: 0;
+      min-height: 65px;
+      align-content: center;
+      justify-items: center;
+      gap: 2px;
+      padding: 5px 2px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: rgba(255,254,249,.7);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .day-button:hover { border-color: var(--green); }
+    .day-button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+    .day-button.has-lesson:not([aria-pressed="true"]) { box-shadow: inset 0 -3px 0 var(--gold); }
+    .day-name { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    .day-number { font: 18px/1 var(--serif); }
+    .day-dot { min-height: 10px; color: var(--gold); font-size: 9px; line-height: 1; }
+    .day-button[aria-pressed="true"] .day-dot { color: #ffe6a1; }
+
+    .selected-day {
+      display: flex;
+      min-height: 31px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: -12px 0 18px;
+      padding: 7px 9px;
+      border-left: 3px solid var(--gold);
+      background: var(--gold-pale);
+      color: #5d491b;
+      font-size: 11px;
+    }
+
+    .selected-day strong { font-weight: 800; }
+    .selected-day span:last-child { color: #725d2b; }
+
+    .lessons-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .lessons-heading p { margin: 0; color: var(--muted); font-size: 10px; }
+    .lesson-list { margin: 0; padding: 0; list-style: none; }
+
+    .lesson-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .lesson-row.is-selected { padding-right: 8px; padding-left: 8px; border-left: 3px solid var(--gold); background: rgba(245,233,201,.45); }
+
+    .lesson-check {
+      width: 24px;
+      height: 24px;
+      margin: 2px 0 0;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .lesson-main { min-width: 0; }
+    .lesson-title-row { display: flex; align-items: baseline; gap: 7px; }
+    .lesson-number { flex: 0 0 auto; color: var(--coral); font-size: 10px; font-weight: 900; }
+    .lesson-title { margin: 0; overflow-wrap: anywhere; font: 400 17px/1.18 var(--serif); }
+    .lesson-row.is-complete .lesson-title { color: var(--muted); text-decoration: line-through; text-decoration-color: #9aa79a; }
+    .lesson-action { margin: 5px 0 0; color: #4c5d52; font-size: 12px; }
+    .lesson-reflection { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+
+    .lesson-meta {
+      display: grid;
+      grid-template-columns: minmax(132px, 180px) minmax(108px, 1fr);
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .lesson-date { min-height: 38px !important; padding: 6px 8px !important; font-size: 12px; }
+    .lesson-status { color: var(--muted); font-size: 10px; }
+    .lesson-row.is-complete .lesson-status { color: var(--green-dark); font-weight: 800; }
+
+    .book-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 14px 0 0;
+    }
+
+    .book-actions .button { min-height: 40px; font-size: 12px; }
+
+    .footer-note {
+      margin: 28px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    @media (min-width: 760px) {
+      .page { padding-top: 34px; }
+      .intro-row { margin-bottom: 25px; }
+      h1 { font-size: 38px; }
+      .library-tools { grid-template-columns: minmax(260px, 380px) auto; justify-content: space-between; padding: 16px 0; }
+      .add-form { grid-template-columns: minmax(220px, 1.4fr) minmax(180px, .8fr) auto; }
+      .book-heading { padding-top: 21px; }
+      .book-heading h2 { font-size: 28px; }
+      .next-lesson { padding: 22px 24px; }
+      .next-lesson h3 { font-size: 30px; }
+      .day-grid { gap: 8px; }
+      .day-button { min-height: 74px; }
+      .lesson-row { grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding: 15px 8px; }
+      .lesson-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 250px); gap: 14px; align-items: center; }
+      .lesson-meta { grid-template-columns: 1fr; margin-top: 0; }
+      .lesson-status { text-align: right; }
+    }
+
+    @media (max-width: 420px) {
+      .topbar { padding-right: 12px; padding-left: 12px; }
+      .page { width: calc(100% - 24px); padding-top: 18px; }
+      .topbar-note { max-width: 126px; font-size: 10px; }
+      .intro-row { align-items: flex-start; }
+      h1 { font-size: 27px; }
+      .today-label { max-width: 92px; text-align: center; }
+      .add-form { grid-template-columns: 1fr 1fr; }
+      .add-form .field:first-child { grid-column: 1 / -1; }
+      .add-form .button { width: 100%; }
+      .book-heading { align-items: flex-start; }
+      .simulated-label { max-width: 138px; }
+      .day-grid { gap: 3px; }
+      .day-button { min-height: 60px; }
+      .day-name { font-size: 8px; }
+      .lesson-meta { grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; }
+      .lesson-status { text-align: right; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../../index.html" aria-label="Fieldnotes, back to design chooser">
+      <span class="brand-mark" aria-hidden="true">f</span>
+      <span>Fieldnotes</span>
+    </a>
+    <span class="topbar-note">A quiet plan for what you read</span>
+  </header>
+
+  <main class="page">
+    <div class="intro-row">
+      <div>
+        <p class="eyebrow">Read something. Do something.</p>
+        <h1>Your week, in practice.</h1>
+      </div>
+      <span id="today-label" class="today-label"></span>
+    </div>
+
+    <section class="library-tools" aria-label="Book plans">
+      <div class="field">
+        <label for="book-select">Your plans</label>
+        <select id="book-select" class="book-select" aria-label="Choose a saved book plan"></select>
+      </div>
+      <button id="toggle-add" class="button secondary" type="button" aria-expanded="false" aria-controls="add-form">＋ <span>Add a plan</span></button>
+    </section>
+
+    <form id="add-form" class="add-form" hidden>
+      <div class="field">
+        <label for="book-title">Book title</label>
+        <input id="book-title" name="title" type="text" maxlength="160" placeholder="What are you reading?" required>
+      </div>
+      <div class="field">
+        <label for="start-date">Start date</label>
+        <input id="start-date" name="startDate" type="date" required>
+      </div>
+      <button class="button" type="submit">Create plan <span aria-hidden="true">→</span></button>
+    </form>
+
+    <p id="status" class="notice" role="status" aria-live="polite"></p>
+    <div id="content"></div>
+
+    <p class="footer-note">Your plans stay in this browser. Each seven-lesson set is a simulated example, not content extracted from the book.</p>
+  </main>
+
+  <script type="module">
+    import {
+      readDatabase,
+      createBook,
+      updateLessonDate,
+      setLessonCompleted,
+      deleteBook,
+      toLocalDateKey,
+    } from "../../scripts/app.mjs";
+
+    const bookSelect = document.querySelector("#book-select");
+    const content = document.querySelector("#content");
+    const status = document.querySelector("#status");
+    const addForm = document.querySelector("#add-form");
+    const toggleAdd = document.querySelector("#toggle-add");
+    const startDateInput = document.querySelector("#start-date");
+    const today = toLocalDateKey(new Date());
+    let activeBookId = null;
+    let selectedDate = today;
+
+    function dateFromKey(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month - 1, day, 12);
+    }
+
+    function formatDate(key, options = { weekday: "long", month: "long", day: "numeric" }) {
+      return new Intl.DateTimeFormat(undefined, options).format(dateFromKey(key));
+    }
+
+    function make(tag, className, text) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined) element.textContent = text;
+      return element;
+    }
+
+    function announce(message, isError = false) {
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+
+    function setAddFormOpen(open) {
+      addForm.hidden = !open;
+      toggleAdd.setAttribute("aria-expanded", String(open));
+      toggleAdd.querySelector("span").textContent = open ? "Close" : "Add a plan";
+      if (open) document.querySelector("#book-title").focus();
+    }
+
+    function nextLesson(book) {
+      const pending = book.lessons.filter((lesson) => !lesson.completed).sort((a, b) => a.date.localeCompare(b.date));
+      return pending[0] ?? null;
+    }
+
+    function renderNext(book) {
+      const section = make("section", "next-lesson");
+      section.setAttribute("aria-labelledby", "next-title");
+      const lesson = nextLesson(book);
+      const kicker = make("p", "next-kicker", lesson ? (lesson.date < today ? "Ready when you are · overdue" : lesson.date === today ? "On the plan for today" : "Up next") : "Week complete");
+      section.append(kicker);
+
+      if (!lesson) {
+        const title = make("h3", "", "All seven lessons are done.");
+        title.id = "next-title";
+        section.append(title);
+        section.append(make("p", "finished-note", "A good week of putting ideas into practice."));
+        return section;
+      }
+
+      section.append(make("h3", "", lesson.title));
+      section.lastElementChild.id = "next-title";
+      section.append(make("p", "next-date", `Lesson ${String(book.lessons.indexOf(lesson) + 1).padStart(2, "0")} · ${formatDate(lesson.date)}`));
+      section.append(make("p", "next-action", lesson.action));
+      section.append(make("p", "next-reflection", `Consider: ${lesson.reflection}`));
+      return section;
+    }
+
+    function renderAgenda(book) {
+      const wrapper = make("section");
+      wrapper.setAttribute("aria-labelledby", "agenda-title");
+      const heading = make("div", "agenda-heading");
+      const title = make("h3", "", "Your seven lesson days");
+      title.id = "agenda-title";
+      heading.append(title, make("p", "", "Choose a day to see its lesson"));
+      wrapper.append(heading);
+
+      const days = make("div", "day-grid");
+      days.setAttribute("role", "group");
+      days.setAttribute("aria-label", "Choose a scheduled lesson day");
+      const scheduledDates = [...new Set(book.lessons.map((lesson) => lesson.date))].sort();
+      for (const key of scheduledDates) {
+        const lessons = book.lessons.filter((lesson) => lesson.date === key);
+        const button = make("button", `day-button${lessons.length ? " has-lesson" : ""}`);
+        button.type = "button";
+        button.dataset.date = key;
+        button.setAttribute("aria-pressed", String(selectedDate === key));
+        button.setAttribute("aria-label", `${formatDate(key)}${lessons.length ? `, ${lessons.length} lesson${lessons.length === 1 ? "" : "s"}` : ", no lesson scheduled"}`);
+        button.append(
+          make("span", "day-name", formatDate(key, { weekday: "short" })),
+          make("span", "day-number", formatDate(key, { day: "numeric" })),
+          make("span", "day-dot", lessons.length ? "●" : " "),
+        );
+        days.append(button);
+      }
+      wrapper.append(days);
+
+      const dayLessons = book.lessons.filter((lesson) => lesson.date === selectedDate);
+      const selected = make("div", "selected-day");
+      selected.setAttribute("aria-live", "polite");
+      selected.append(
+        make("strong", "", formatDate(selectedDate)),
+        make("span", "", dayLessons.length ? `${dayLessons.length} lesson scheduled` : "No lesson scheduled"),
+      );
+      wrapper.append(selected);
+      return wrapper;
+    }
+
+    function renderLessons(book) {
+      const section = make("section");
+      section.setAttribute("aria-labelledby", "lessons-title");
+      const heading = make("div", "lessons-heading");
+      const title = make("h3", "", "Seven small steps");
+      title.id = "lessons-title";
+      heading.append(title, make("p", "", "Edit dates or mark each one done"));
+      section.append(heading);
+
+      const list = make("ol", "lesson-list");
+      book.lessons.forEach((lesson, index) => {
+        const row = make("li", `lesson-row${lesson.completed ? " is-complete" : ""}${lesson.date === selectedDate ? " is-selected" : ""}`);
+        const checkbox = make("input", "lesson-check");
+        checkbox.type = "checkbox";
+        checkbox.checked = lesson.completed;
+        checkbox.dataset.complete = lesson.id;
+        checkbox.setAttribute("aria-label", `Mark lesson ${index + 1}, ${lesson.title}, complete`);
+
+        const body = make("div", "lesson-body");
+        const main = make("div", "lesson-main");
+        const titleRow = make("div", "lesson-title-row");
+        titleRow.append(make("span", "lesson-number", String(index + 1).padStart(2, "0")), make("h4", "lesson-title", lesson.title));
+        main.append(titleRow, make("p", "lesson-action", lesson.action), make("p", "lesson-reflection", `Consider: ${lesson.reflection}`));
+
+        const meta = make("div", "lesson-meta");
+        const dateLabel = make("label", "field-label", `Date for lesson ${index + 1}`);
+        const dateInput = make("input", "lesson-date");
+        dateInput.type = "date";
+        dateInput.value = lesson.date;
+        dateInput.dataset.lessonDate = lesson.id;
+        dateLabel.append(dateInput);
+        meta.append(dateLabel, make("span", "lesson-status", lesson.completed ? "Completed" : "Not done yet"));
+
+        body.append(main, meta);
+        row.append(checkbox, body);
+        list.append(row);
+      });
+      section.append(list);
+      return section;
+    }
+
+    function renderBook(book) {
+      const wrapper = document.createElement("div");
+      const heading = make("div", "book-heading");
+      heading.append(make("h2", "", book.title), make("span", "simulated-label", "Simulated examples · not extracted from this book"));
+      wrapper.append(heading);
+      wrapper.append(renderNext(book));
+
+      const completeCount = book.lessons.filter((lesson) => lesson.completed).length;
+      const progress = make("div", "progress-line");
+      const track = make("div", "progress-track");
+      track.setAttribute("role", "progressbar");
+      track.setAttribute("aria-label", "Lessons completed");
+      track.setAttribute("aria-valuemin", "0");
+      track.setAttribute("aria-valuemax", "7");
+      track.setAttribute("aria-valuenow", String(completeCount));
+      const fill = make("div", "progress-fill");
+      fill.style.width = `${(completeCount / 7) * 100}%`;
+      track.append(fill);
+      progress.append(track, make("span", "progress-copy", `${completeCount} / 7 done`));
+      wrapper.append(progress, renderAgenda(book), renderLessons(book));
+
+      const actions = make("div", "book-actions");
+      const remove = make("button", "button danger", "Delete this plan");
+      remove.type = "button";
+      remove.dataset.deleteBook = book.id;
+      actions.append(remove);
+      wrapper.append(actions);
+      return wrapper;
+    }
+
+    function render() {
+      const database = readDatabase();
+      const previousId = activeBookId;
+      if (!database.books.some((book) => book.id === activeBookId)) activeBookId = database.books[0]?.id ?? null;
+
+      bookSelect.replaceChildren();
+      if (!database.books.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No plans yet";
+        bookSelect.append(option);
+        bookSelect.disabled = true;
+      } else {
+        bookSelect.disabled = false;
+        for (const book of database.books) {
+          const option = document.createElement("option");
+          option.value = book.id;
+          option.textContent = book.title;
+          option.selected = book.id === activeBookId;
+          bookSelect.append(option);
+        }
+      }
+
+      document.querySelector("#today-label").textContent = formatDate(today, { weekday: "short", month: "short", day: "numeric" });
+      const book = database.books.find((item) => item.id === activeBookId);
+      content.replaceChildren();
+      if (!book) {
+        const empty = make("section", "empty-state");
+        empty.setAttribute("aria-labelledby", "empty-title");
+        const title = make("h2", "", "Start with a book on your mind.");
+        title.id = "empty-title";
+        empty.append(title, make("p", "", "Add a title and start date to create seven simulated example lessons. They are not extracted from the book."));
+        const addButton = make("button", "button", "＋ Add a plan");
+        addButton.type = "button";
+        addButton.addEventListener("click", () => setAddFormOpen(true));
+        empty.append(addButton);
+        content.append(empty);
+      } else {
+        if (previousId !== activeBookId || !book.lessons.some((lesson) => lesson.date === selectedDate)) {
+          selectedDate = book.startDate;
+        }
+        content.append(renderBook(book));
+      }
+    }
+
+    bookSelect.addEventListener("change", () => {
+      activeBookId = bookSelect.value || null;
+      announce("");
+      render();
+    });
+
+    toggleAdd.addEventListener("click", () => setAddFormOpen(addForm.hidden));
+
+    addForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(addForm);
+      try {
+        const book = createBook(formData.get("title"), formData.get("startDate"));
+        activeBookId = book.id;
+        selectedDate = book.startDate;
+        addForm.reset();
+        startDateInput.value = today;
+        setAddFormOpen(false);
+        announce(`Created a plan with seven simulated example lessons for “${book.title}”.`);
+        render();
+      } catch (error) {
+        announce(error.message || "The plan could not be saved.", true);
+      }
+    });
+
+    content.addEventListener("click", (event) => {
+      const dayButton = event.target.closest("[data-date]");
+      if (dayButton) {
+        selectedDate = dayButton.dataset.date;
+        render();
+        content.querySelector(`[data-date="${selectedDate}"]`)?.focus();
+        return;
+      }
+
+      const deleteButton = event.target.closest("[data-delete-book]");
+      if (deleteButton) {
+        const book = readDatabase().books.find((item) => item.id === deleteButton.dataset.deleteBook);
+        if (!book || !globalThis.confirm(`Delete the plan for “${book.title}” and its progress?`)) return;
+        try {
+          deleteBook(book.id);
+          activeBookId = null;
+          announce(`Deleted the plan for “${book.title}”.`);
+          render();
+        } catch (error) {
+          announce(error.message || "The plan could not be deleted.", true);
+        }
+      }
+    });
+
+    content.addEventListener("change", (event) => {
+      const checkbox = event.target.closest("[data-complete]");
+      const dateInput = event.target.closest("[data-lesson-date]");
+      try {
+        if (checkbox) {
+          const book = readDatabase().books.find((item) => item.id === activeBookId);
+          const lesson = book?.lessons.find((item) => item.id === checkbox.dataset.complete);
+          setLessonCompleted(activeBookId, checkbox.dataset.complete, checkbox.checked);
+          announce(`${lesson?.title ?? "Lesson"} marked ${checkbox.checked ? "complete" : "not complete"}.`);
+          render();
+          content.querySelectorAll("[data-complete]").forEach((input) => {
+            if (input.dataset.complete === checkbox.dataset.complete) input.focus();
+          });
+        } else if (dateInput) {
+          const book = readDatabase().books.find((item) => item.id === activeBookId);
+          const lesson = book?.lessons.find((item) => item.id === dateInput.dataset.lessonDate);
+          updateLessonDate(activeBookId, dateInput.dataset.lessonDate, dateInput.value);
+          selectedDate = dateInput.value;
+          announce(`${lesson?.title ?? "Lesson"} moved to ${formatDate(dateInput.value)}.`);
+          render();
+          content.querySelectorAll("[data-lesson-date]").forEach((input) => {
+            if (input.dataset.lessonDate === dateInput.dataset.lessonDate) input.focus();
+          });
+        }
+      } catch (error) {
+        announce(error.message || "That change could not be saved.", true);
+        render();
+      }
+    });
+
+    window.addEventListener("storage", render);
+    startDateInput.value = today;
+    render();
+  </script>
+</body>
+</html>
