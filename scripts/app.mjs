@@ -1,42 +1,5 @@
 export const STORAGE_KEY = "fieldnotes.books.v1";
-
-export const LESSON_TEMPLATES = [
-  {
-    title: "Name the central idea",
-    action: "Write the idea in one sentence, using your own words.",
-    reflection: "What makes this idea useful to you right now?",
-  },
-  {
-    title: "Turn insight into action",
-    action: "Choose one small action that puts the idea into practice.",
-    reflection: "What would doing this look like in an ordinary day?",
-  },
-  {
-    title: "Notice the friction",
-    action: "List one thing likely to make your action harder to start.",
-    reflection: "What could you change to make starting easier?",
-  },
-  {
-    title: "Choose a reliable cue",
-    action: "Connect the action to a time, place, or existing routine.",
-    reflection: "Which cue is most likely to happen consistently?",
-  },
-  {
-    title: "Run a small experiment",
-    action: "Try the action once and note what happened.",
-    reflection: "What surprised you about the attempt?",
-  },
-  {
-    title: "Adjust with evidence",
-    action: "Keep one part that worked and change one part that did not.",
-    reflection: "What is the smallest useful adjustment?",
-  },
-  {
-    title: "Choose what to keep",
-    action: "Decide whether to repeat, revise, or set aside the practice.",
-    reflection: "What will you carry into next week?",
-  },
-];
+export const LESSON_COUNT = 7;
 
 function makeId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -70,7 +33,7 @@ function isValidDatabase(value) {
     typeof book.title === "string" &&
     isDateKey(book.startDate) &&
     Array.isArray(book.lessons) &&
-    book.lessons.length === LESSON_TEMPLATES.length &&
+    book.lessons.length === LESSON_COUNT &&
     book.lessons.every((lesson) =>
       typeof lesson.id === "string" &&
       typeof lesson.title === "string" &&
@@ -98,10 +61,15 @@ function writeDatabase(database, storage = globalThis.localStorage) {
   storage.setItem(STORAGE_KEY, JSON.stringify(database));
 }
 
-export function createBook(title, startDate = toLocalDateKey(new Date()), storage = globalThis.localStorage) {
+export function createBook(title, startDate, lessons, storage = globalThis.localStorage) {
   const cleanTitle = String(title ?? "").trim();
   if (!cleanTitle) throw new TypeError("Enter a book title.");
   if (!isDateKey(startDate)) throw new TypeError("Choose a valid start date.");
+  if (!Array.isArray(lessons) || lessons.length !== LESSON_COUNT || lessons.some((lesson) =>
+    ![lesson?.title, lesson?.action, lesson?.reflection].every((value) => typeof value === "string" && value.trim())
+  )) {
+    throw new TypeError(`The book service must return ${LESSON_COUNT} complete lessons.`);
+  }
 
   const database = readDatabase(storage);
   const book = {
@@ -109,9 +77,11 @@ export function createBook(title, startDate = toLocalDateKey(new Date()), storag
     title: cleanTitle,
     createdAt: new Date().toISOString(),
     startDate,
-    lessons: LESSON_TEMPLATES.map((lesson, index) => ({
+    lessons: lessons.map((lesson, index) => ({
       id: makeId(),
-      ...lesson,
+      title: lesson.title.trim(),
+      action: lesson.action.trim(),
+      reflection: lesson.reflection.trim(),
       date: addDays(startDate, index),
       completed: false,
     })),

@@ -336,7 +336,7 @@
           <p class="eyebrow">Library / Weekly practice</p>
           <h1>Books into practice</h1>
         </div>
-        <p class="disclosure"><strong>Simulated examples.</strong> Lesson sets are authored placeholders, not content extracted from the book.</p>
+        <p class="disclosure"><strong>AI-generated practice ideas.</strong> OpenAI uses its available knowledge; lessons are not verified against your copy of the book.</p>
       </div>
 
       <div class="workbench">
@@ -354,10 +354,14 @@
               <input id="book-title" name="title" type="text" maxlength="180" autocomplete="off" required>
             </div>
             <div class="field">
+              <label for="book-author">Author <span>(optional)</span></label>
+              <input id="book-author" name="author" type="text" maxlength="180" autocomplete="off">
+            </div>
+            <div class="field">
               <label for="start-date">Schedule starts</label>
               <input id="start-date" name="startDate" type="date" required>
             </div>
-            <button class="primary-button" type="submit">+ Create simulated plan</button>
+            <button class="primary-button" id="create-plan" type="submit">Generate seven lessons</button>
           </form>
         </aside>
 
@@ -387,21 +391,21 @@
             </div>
             <table class="ledger">
               <colgroup><col><col><col><col></colgroup>
-              <caption class="visually-hidden" id="ledger-caption">Seven simulated lessons</caption>
-              <thead><tr><th scope="col">No.</th><th scope="col">Simulated lesson</th><th scope="col">Scheduled date</th><th scope="col">Status</th></tr></thead>
+              <caption class="visually-hidden" id="ledger-caption">Seven generated lessons</caption>
+              <thead><tr><th scope="col">No.</th><th scope="col">Lesson</th><th scope="col">Scheduled date</th><th scope="col">Status</th></tr></thead>
               <tbody id="lesson-rows"></tbody>
             </table>
           </div>
           <div class="empty-state" id="empty-state">
             <strong>Your ledger is ready</strong>
-            Add a book to create its seven simulated lesson examples.
+            Add a book to generate a seven-lesson plan.
           </div>
           <p class="announcement" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
         </section>
       </div>
     </main>
 
-    <footer>Fieldnotes · Plans are stored locally on this device. No book text is read or analyzed.</footer>
+    <footer>Plans stay in this browser. OpenAI generates original practice ideas from its available knowledge; it does not read your copy of the book.</footer>
   </div>
 
   <script type="module">
@@ -418,7 +422,9 @@
     const bookCount = document.querySelector("#book-count");
     const form = document.querySelector("#add-book-form");
     const titleInput = document.querySelector("#book-title");
+    const authorInput = document.querySelector("#book-author");
     const startDateInput = document.querySelector("#start-date");
+    const createPlanButton = document.querySelector("#create-plan");
     const selectedPlan = document.querySelector("#selected-plan");
     const emptyState = document.querySelector("#empty-state");
     const rows = document.querySelector("#lesson-rows");
@@ -490,9 +496,9 @@
 
       renderBookCover(activeBook);
       document.querySelector("#plan-title").textContent = activeBook.title;
-      document.querySelector("#ledger-caption").textContent = `Seven simulated lessons for ${activeBook.title}`;
+      document.querySelector("#ledger-caption").textContent = `Seven generated lessons for ${activeBook.title}`;
       const dates = activeBook.lessons.map((lesson) => lesson.date).filter(Boolean).sort();
-      document.querySelector("#plan-subtitle").textContent = `Started ${formatDate(activeBook.startDate)} · simulated lesson set`;
+      document.querySelector("#plan-subtitle").textContent = `Started ${formatDate(activeBook.startDate)} · AI-generated practice ideas`;
       const completed = activeBook.lessons.filter((lesson) => lesson.completed).length;
       document.querySelector("#metric-complete").textContent = `${completed} / ${activeBook.lessons.length}`;
       const nextLesson = activeBook.lessons.find((lesson) => !lesson.completed);
@@ -534,16 +540,30 @@
       });
     }
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      createPlanButton.disabled = true;
+      createPlanButton.textContent = "Generating lessons…";
+      announce("Asking OpenAI to create a seven-lesson plan…");
       try {
-        const book = createBook(titleInput.value, startDateInput.value);
+        const response = await fetch("/api/generate-lessons", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ title: titleInput.value, author: authorInput.value }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "The book could not be processed.");
+        const book = createBook(titleInput.value, startDateInput.value, result.lessons);
         activeBookId = book.id;
         titleInput.value = "";
+        authorInput.value = "";
         render();
-        announce(`Created a simulated seven-lesson plan for “${book.title}”.`);
+        announce(`Created a seven-lesson plan for “${book.title}”.`);
       } catch (error) {
         announce(error.message || "The book could not be saved.", true);
+      } finally {
+        createPlanButton.disabled = false;
+        createPlanButton.textContent = "Generate seven lessons";
       }
     });
 
